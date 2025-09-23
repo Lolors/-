@@ -1,0 +1,119 @@
+
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>지관 무게 계산기</title>
+<style>
+  :root{
+    --fg:#111827;--bd:#e5e7eb;--muted:#6b7280;
+    --okbg:#f0fdf4;--okbd:#bbf7d0;--warnbg:#fff7ed;--warnbd:#fdba74
+  }
+  *{box-sizing:border-box}
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+       line-height:1.6;margin:16px;max-width:640px;color:var(--fg)}
+  h1{font-size:1.1rem;margin:0 0 10px}
+  .card{border:1px solid var(--bd);border-radius:12px;padding:12px;background:#fff;margin:10px 0}
+  label{display:block;font-weight:700;margin:8px 0 4px;font-size:.95rem}
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .col{flex:1 1 160px;min-width:140px}
+  input[type="text"]{
+    width:100%;padding:10px 10px;border:1px solid #d1d5db;border-radius:8px;
+    font-size:1rem;line-height:1.2
+  }
+  input[type="text"]::placeholder{color:#9ca3af}
+  .muted{color:var(--muted);font-size:.9rem}
+  .result{font-size:1.1rem;font-weight:800;padding:10px;border-radius:10px;
+          background:var(--okbg);border:1px solid var(--okbd);margin-top:8px;display:none}
+  .warn{background:var(--warnbg);border:1px solid var(--warnbd);padding:8px;border-radius:8px;margin-top:8px;display:none}
+  .footer{color:var(--muted);font-size:.8rem;margin-top:8px}
+  .hint{font-size:.85rem;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+  <h1>지관 무게 계산기</h1>
+  <div class="muted">입력은 <b>cm</b>, 결과는 <b>g(소수점 1자리)</b>. 기본 밀도 ρ = <b>0.78 g/cm³</b></div>
+
+  <div class="card">
+    <div class="row">
+      <div class="col">
+        <label for="D2">지관 외경 D₂ (cm)</label>
+        <input id="D2" type="text" inputmode="decimal" placeholder="예: 8.5">
+      </div>
+      <div class="col">
+        <label for="D1">지관 내경 D₁ (cm)</label>
+        <input id="D1" type="text" inputmode="decimal" placeholder="예: 7.5">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col">
+        <label for="L">지관 길이 L (cm)</label>
+        <input id="L" type="text" inputmode="decimal" placeholder="예: 7.5">
+      </div>
+      <div class="col">
+        <label for="rho">밀도 ρ (g/cm³)</label>
+        <input id="rho" type="text" inputmode="decimal" value="0.78">
+      </div>
+    </div>
+
+    <div id="warn" class="warn"></div>
+    <div id="out" class="result"></div>
+    <div id="detail" class="muted" style="display:none"></div>
+    <div class="hint">숫자를 입력하면 자동으로 계산돼요.</div>
+  </div>
+
+  <div class="footer">© 지관 무게 계산기 · 단일 HTML 파일(오프라인 가능)</div>
+
+<script>
+function parseNum(v){
+  if(typeof v !== 'string') return NaN;
+  v = v.trim().replace(/,/g,'.').replace(/[^0-9\\.\\-]/g,'');
+  return parseFloat(v);
+}
+function round1(x){ return Math.round(x*10)/10; }
+
+function calc(){
+  const warn = document.getElementById('warn');
+  const out = document.getElementById('out');
+  const detail = document.getElementById('detail');
+  warn.style.display='none'; out.style.display='none'; detail.style.display='none'; warn.textContent='';
+
+  const D2 = parseNum(document.getElementById('D2').value);
+  const D1 = parseNum(document.getElementById('D1').value);
+  const L  = parseNum(document.getElementById('L').value);
+  const rho = parseNum(document.getElementById('rho').value);
+
+  if([D2,D1,L,rho].some(x => isNaN(x))){
+    warn.textContent = '빈칸 없이 숫자를 모두 입력하세요.';
+    warn.style.display='block'; return;
+  }
+  if(D2 < D1){
+    warn.textContent = '외경(D₂)은 내경(D₁)보다 크거나 같아야 해요.';
+    warn.style.display='block'; return;
+  }
+  if(D2 <= 0 || D1 < 0 || L <=0 || rho <= 0){
+    warn.textContent = '모든 값은 양수여야 해요.';
+    warn.style.display='block'; return;
+  }
+
+  const diffSq = (D2*D2 - D1*D1);
+  const V = Math.PI * L * (diffSq/4);
+  const m = V * rho;
+
+  out.textContent = `지관 무게 = ${round1(m).toFixed(1)} g`;
+  out.style.display='block';
+  detail.innerHTML = `V = π × ${L.toFixed(2)} × ((${D2.toFixed(2)}² − ${D1.toFixed(2)}²)/4) = ${V.toFixed(2)} cm³ · ρ = ${rho.toFixed(2)} g/cm³`;
+  detail.style.display='block';
+}
+
+// Auto-calc: on input, blur, and page load with defaults
+['D2','D1','L','rho'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', calc, {passive:true});
+  el.addEventListener('blur', calc, {passive:true});
+});
+window.addEventListener('DOMContentLoaded', calc, {once:true});
+</script>
+</body>
+</html>
